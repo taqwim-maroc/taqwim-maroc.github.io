@@ -53,9 +53,25 @@ button[disabled]{opacity:.6;cursor:wait}
 .c.unc{border-style:dashed;color:var(--mute)}
 .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
 table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px solid var(--line)}td.n{white-space:nowrap;text-align:end;color:var(--mute);font-size:14px}
+.pray{background:light-dark(#fff,#1f1013);border-bottom:1px solid var(--line)}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.ph h2{margin:0}
+select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
+.times{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.pt{border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg)}
+.pt span{display:block;font-size:14px;color:var(--mute)}.pt b{font:700 26px/1.2 Amiri,serif;font-variant-numeric:tabular-nums}
+.pt.nx{background:var(--red);border-color:var(--red);color:#fff}.pt.nx span{color:#fde4e6}
+.pt.sun{opacity:.75}
+.fast{margin-top:8px;font-size:15px;color:#0b6b67;font-weight:600}
+.c.fs::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:-14px}
+.c{grid-template-rows:1fr auto}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--mute);margin-top:10px}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
+.conv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.cbox{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg)}
+.crow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.crow>*{flex:1 1 70px}.crow select{flex:2 1 150px}
+.res{font:700 22px/1.35 Amiri,serif;color:var(--red);min-height:1.4em}
 .gcal{display:inline-block;padding:10px 16px;border:1px solid var(--teal);border-radius:10px;text-decoration:none;font-weight:600}
 .note{font-size:14px;color:var(--mute);max-width:70ch}a{color:var(--teal)}
-@media(max-width:700px){.top,.two{grid-template-columns:minmax(0,1fr)}.moonbox svg{width:130px}.c{font-size:19px}}
+@media(max-width:700px){.times{grid-template-columns:repeat(3,minmax(0,1fr))}.conv{grid-template-columns:minmax(0,1fr)}.top,.two{grid-template-columns:minmax(0,1fr)}.moonbox svg{width:130px}.c{font-size:19px}}
 @media(prefers-reduced-motion:no-preference){.sheet{animation:drop .5s ease-out}@keyframes drop{from{transform:translateY(-12px);opacity:0}}}
 </style></head><body>
 
@@ -74,6 +90,12 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
   </div>
 </div></header>
 
+<section class="band pray" id="praySec"><div class="wrap">
+  <div class="ph"><h2>مواقيت الصلاة</h2><select id="city" aria-label="المدينة"></select></div>
+  <div class="times" id="times"></div>
+  <p class="sub" id="pnote" style="text-align:start;margin:10px 0 0">مواقيت وزارة الأوقاف والشؤون الإسلامية</p>
+</div></section>
+
 <section class="band"><div class="wrap">
   <div class="nav">
     <button class="ghost" id="prev" aria-label="الشهر السابق">→</button>
@@ -81,6 +103,21 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
     <button class="ghost" id="next" aria-label="الشهر التالي">←</button>
   </div>
   <div class="grid" id="grid"></div>
+  <div class="legend"><span><i style="background:var(--red)"></i>اليوم</span><span><i style="background:var(--teal)"></i>مناسبة أو صيام مستحب</span><span><i style="border:1px dashed var(--mute)"></i>تقديري</span></div>
+  <p class="sub" id="dayinfo" style="margin-top:8px"></p>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <h2>محوّل التاريخ</h2>
+  <div class="conv">
+    <div class="cbox"><strong>من الميلادي إلى الهجري</strong>
+      <div class="crow"><input type="date" id="gIn" aria-label="التاريخ الميلادي"></div>
+      <div class="res" id="gOut"></div></div>
+    <div class="cbox"><strong>من الهجري إلى الميلادي</strong>
+      <div class="crow"><input type="number" id="hD" min="1" max="30" inputmode="numeric" aria-label="اليوم" placeholder="اليوم"><select id="hM" aria-label="الشهر"></select><input type="number" id="hY" min="1421" max="1499" inputmode="numeric" aria-label="السنة" placeholder="السنة"></div>
+      <div class="res" id="hOut"></div></div>
+  </div>
+  <p class="sub" style="text-align:start">التاريخ الثابت ببلاغ يُعرض كما هو، وما لم يصدر بلاغه بعد يُعلَّم «تقديري».</p>
 </div></section>
 
 <section class="band" style="background:light-dark(#f3ece2,#211114)"><div class="wrap two">
@@ -101,16 +138,30 @@ const BASE=[[1446,6,"2024-12-03"],[1446,11,"2025-04-29"],[1446,12,"2025-05-29"],
 [1447,1,"2025-06-27"],[1447,2,"2025-07-26"],[1447,3,"2025-08-25"],[1447,4,"2025-09-24"],[1447,5,"2025-10-24"],[1447,6,"2025-11-22"],[1447,7,"2025-12-22"],[1447,8,"2026-01-21"],[1447,9,"2026-02-19"],[1447,10,"2026-03-20"],[1447,11,"2026-04-19"],[1447,12,"2026-05-18"],
 [1448,1,"2026-06-17"],[1448,2,"2026-07-16"],[1448,3,"2026-08-14"],[1448,4,"2026-09-13"],[1448,5,"2026-10-13"],[1448,6,"2026-11-11"]/*NEXT*/];
 const EVENTS=[[1,1,"رأس السنة الهجرية"],[1,10,"عاشوراء"],[3,12,"عيد المولد النبوي"],[9,1,"فاتح رمضان"],[9,27,"ليلة القدر"],[10,1,"عيد الفطر"],[12,9,"يوم عرفة"],[12,10,"عيد الأضحى"]];
+const GM=["يناير","فبراير","مارس","أبريل","ماي","يونيو","يوليوز","غشت","شتنبر","أكتوبر","نونبر","دجنبر"];
+// صيام مستحب
+function fastOn(h){
+  if(h.m===1&&h.d===9)return"صيام تاسوعاء";
+  if(h.m===1&&h.d===10)return"صيام عاشوراء";
+  if(h.m===12&&h.d<=8)return"صيام العشر من ذي الحجة";
+  if(h.m===12&&h.d===9)return"صيام يوم عرفة";
+  if(h.m===10&&h.d>=2&&h.d<=7)return"صيام ست من شوال";
+  if(h.m!==9&&h.d>=13&&h.d<=15&&!(h.m===12&&h.d===13))return"صيام الأيام البيض";
+  return"";
+}
+let SRC={};
 const CK="hijri-ma-cache";
 let fetched=[];try{fetched=JSON.parse(localStorage.getItem(CK)||"[]")}catch(e){}
+for(const r of fetched)if(r[3])SRC[idx0(r[0],r[1])]=r[3];
 
 
+function idx0(y,m){return y*12+m-1}
 const g2j=(y,m,d)=>{const a=Math.floor((14-m)/12),Y=y+4800-a,M=m+12*a-3;return d+Math.floor((153*M+2)/5)+365*Y+Math.floor(Y/4)-Math.floor(Y/100)+Math.floor(Y/400)-32045};
 const j2g=j=>{const a=j+32044,b=Math.floor((4*a+3)/146097),c=a-Math.floor(146097*b/4),d=Math.floor((4*c+3)/1461),e=c-Math.floor(1461*d/4),m=Math.floor((5*e+2)/153);return[100*b+d-4800+Math.floor(m/10),m+3-12*Math.floor(m/10),e-Math.floor((153*m+2)/5)+1]};
 const j2iso=j=>j2g(j).map((n,i)=>i?String(n).padStart(2,"0"):n).join("-");
 const iso2j=s=>{const p=String(s).split("-").map(Number);return p.length===3&&p.every(n=>n>0)?g2j(p[0],p[1],p[2]):null};
 const tab=(y,m)=>Math.ceil(29.5*(m-1))+(y-1)*354+Math.floor((3+11*y)/30)+1948439;
-const idx=(y,m)=>y*12+m-1, Y0=1420, Y1=1500;
+const idx=idx0, Y0=1420, Y1=1500;
 let starts={},lastOff=0;
 const $=id=>document.getElementById(id);
 
@@ -145,6 +196,7 @@ function moon(d){
 function sheet(){
   const h=toH(TODAY);if(!h)return;
   $("sheet").innerHTML=`<div class="wd">${wd(TODAY)}</div><div class="big">${h.d}</div><div class="hm">${HM[h.m-1]} ${h.y}هـ</div><span class="tag ${h.sure?"ok":"ap"}">${h.sure?"ثابت ببلاغ الوزارة":"تقديري، في انتظار البلاغ"}</span>`;
+  const f=fastOn(h);if(f)$("sheet").insertAdjacentHTML("beforeend",`<div class="fast">يُستحب اليوم: ${f}</div>`);
   moon(h.d);
 }
 const evOn=h=>EVENTS.filter(e=>e[0]===h.m&&e[1]===h.d);
@@ -155,16 +207,20 @@ function grid(){
   let h=WD.map(w=>`<div class="dn">${w.replace("ال","").slice(0,3)}</div>`).join("");
   for(let i=0;i<(s.j+1)%7;i++)h+="<div></div>";
   for(let d=1;d<=len;d++){const j=s.j+d-1,hh=toH(j),ev=evOn(hh);
-    h+=`<div class="c${j===TODAY?" today":""}${ev.length?" ev":""}${hh.sure?"":" unc"}" title="${wd(j)} ${htxt(hh)}${ev.length?" · "+ev[0][2]:""}">${d}</div>`}
+    const f=fastOn(hh),lab=[ev.length?ev[0][2]:"",f].filter(Boolean).join(" · ");
+    h+=`<div class="c${j===TODAY?" today":""}${ev.length?" ev":""}${f?" fs":""}${hh.sure?"":" unc"}" data-j="${j}" role="button" tabindex="0" title="${wd(j)} ${htxt(hh)}${lab?" · "+lab:""}">${d}</div>`}
   $("grid").innerHTML=h;
 }
+function dayInfo(j){const hh=toH(j);if(!hh)return;const ev=evOn(hh),f=fastOn(hh);
+  $("dayinfo").textContent=`${wd(j)} ${htxt(hh)}${hh.sure?"":" (تقديري)"}${ev.length?" · "+ev[0][2]:""}${f?" · "+f:""}`}
 function lists(){
   const t=toH(TODAY),out=[];
   for(let k=idx(t.y,1);k<=idx(t.y+1,12);k++)for(const e of EVENTS)if(k%12+1===e[0]){const j=starts[k].j+e[1]-1;if(j>=TODAY)out.push([j,e[2],toH(j)])}
   out.sort((a,b)=>a[0]-b[0]);
   $("ev").innerHTML=out.slice(0,7).map(([j,n,h])=>`<tr><td><strong>${n}</strong><br><span style="font-size:14px">${wd(j)} ${htxt(h)}${h.sure?"":" (تقديري)"}</span></td><td class="n">${j===TODAY?"اليوم":"بعد "+(j-TODAY)+" يوما"}</td></tr>`).join("");
   const off=Object.keys(starts).map(Number).filter(k=>starts[k].o).sort((a,b)=>b-a);
-  $("offT").innerHTML=off.map(k=>`<tr><td>فاتح ${HM[k%12]} ${Math.floor(k/12)}هـ</td><td class="n">يوم ${wd(starts[k].j)}</td></tr>`).join("");
+  const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  $("offT").innerHTML=off.map(k=>{const u=SRC[k],a=u&&/^https:\/\//.test(u)?` · <a href="${esc(u)}" target="_blank" rel="noopener">البلاغ</a>`:"";return`<tr><td>فاتح ${HM[k%12]} ${Math.floor(k/12)}هـ</td><td class="n">يوم ${wd(starts[k].j)}${a}</td></tr>`}).join("");
 }
 function ask(){
   const box=$("ask"),t=toH(TODAY);box.hidden=true;if(!t)return;
@@ -173,7 +229,7 @@ function ask(){
   if(cur.o&&!nx.o&&t.d>=28){box.hidden=false;box.innerHTML=`<strong>اقترب آخر ${HM[t.m-1]}.</strong> الشهر الهجري 29 أو 30 يوما حسب رؤية الهلال، فاضغط «تحديث» كل يوم حتى يصدر بلاغ الوزارة بفاتح ${nm}.`;$("upd").classList.add("pulse")}
   else $("upd").classList.remove("pulse");
 }
-function all(){build();sheet();grid();lists();ask()}
+function all(){build();sheet();grid();lists();ask();conv()}
 
 $("prev").onclick=()=>{view=Math.max(view-1,idx(Y0,1));grid()};
 $("next").onclick=()=>{view=Math.min(view+1,idx(Y1,11));grid()};
@@ -186,7 +242,7 @@ async function update(manual){
     const r=await fetch("data.json?t="+Date.now(),{cache:"no-store",signal:ctl.signal});
     if(!r.ok)throw 0;
     const data=await r.json(),rows=[];
-    for(const v of (data.months||[])){const y=+v.y,m=+v.m,g=String(v.start||"");if(y&&m&&/^\d{4}-\d{2}-\d{2}$/.test(g))rows.push([y,m,g])}
+    for(const v of (data.months||[])){const y=+v.y,m=+v.m,g=String(v.start||"");if(y&&m&&/^\d{4}-\d{2}-\d{2}$/.test(g)){rows.push([y,m,g,String(v.source||"")]);if(v.source)SRC[idx(y,m)]=String(v.source)}}
     const before=lastOff;fetched=rows;try{localStorage.setItem(CK,JSON.stringify(rows));localStorage.setItem(CK+"-t",String(data.checked||""))}catch(e){}
     all();
     const k=lastOff;
@@ -197,8 +253,53 @@ async function update(manual){
   finally{clearTimeout(timer);b.disabled=false;b.textContent="تحديث من بلاغات الوزارة"}
 }
 $("upd").addEventListener("click",()=>update(true));
+const pick=e=>{const c=e.target.closest(".c");if(c)dayInfo(+c.dataset.j)};
+$("grid").addEventListener("click",pick);
+$("grid").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(e)}});
 
-build();view=toH(TODAY).k;all();
+// محوّل التاريخ
+const gtxt=j=>{const[y,m,d]=j2g(j);return`${wd(j)} ${d} ${GM[m-1]} ${y}م`};
+function conv(){
+  const g=$("gIn").value,go=$("gOut");
+  if(g){const h=toH(iso2j(g));go.textContent=h?htxt(h)+(h.sure?"":" (تقديري)"):"خارج النطاق"}else go.textContent="";
+  const d=+$("hD").value,m=+$("hM").value,y=+$("hY").value,ho=$("hOut");
+  if(!(d&&m&&y>=Y0&&y<Y1)){ho.textContent="";return}
+  const s=starts[idx(y,m)],n=starts[idx(y,m)+1],len=n.j-s.j;
+  if(d>len||d<1){ho.textContent=`هذا الشهر ${len} يوما${s.o&&n.o?"":" تقديرا"}`;return}
+  const j=s.j+d-1,h=toH(j);ho.textContent=gtxt(j)+(h&&h.sure?"":" (تقديري)");
+}
+$("hM").innerHTML=HM.map((n,i)=>`<option value="${i+1}">${n}</option>`).join("");
+for(const id of["gIn","hD","hM","hY"])$(id).addEventListener("input",conv);
+
+// مواقيت الصلاة
+const PN=["الصبح","الشروق","الظهر","العصر","المغرب","العشاء"],PK="hijri-ma-city";
+let PM=null,city=1;try{city=+localStorage.getItem(PK)||1}catch(e){}
+function loadScript(src){return new Promise((ok,no)=>{const el=document.createElement("script");el.src=src;el.onload=ok;el.onerror=no;document.head.appendChild(el)})}
+function renderTimes(){
+  const box=$("times");if(!PM){return}
+  const v=PM.villes.find(x=>x.c===city)||PM.villes[0];city=v.c;$("city").value=String(v.c);
+  const dt=new Date(),row=v.h[dt.getDate()-1];if(!row){box.innerHTML="";return}
+  const mins=dt.getHours()*60+dt.getMinutes(),toM=t=>{const[a,b]=t.split(":");return a*60+ +b};
+  let nx=row.findIndex((t,i)=>i!==1&&toM(t)>mins);
+  box.innerHTML=row.map((t,i)=>`<div class="pt${i===nx?" nx":""}${i===1?" sun":""}"><span>${PN[i]}</span><b>${t.replace(/[^0-9:]/g,"")}</b></div>`).join("");
+  $("pnote").textContent=`${v.n} · مواقيت وزارة الأوقاف والشؤون الإسلامية`+(nx<0?" · انتهت صلوات اليوم":"");
+}
+async function prayers(){
+  const dt=new Date(),key=`horaires-${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
+  try{
+    if(!(window.HORAIRES_MOIS||[]).some(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1))await loadScript(`prayers/${key}.js`);
+    PM=(window.HORAIRES_MOIS||[]).find(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1);
+    if(!PM)throw 0;
+    $("city").innerHTML=PM.villes.map(v=>`<option value="${+v.c}">${String(v.n).replace(/[<>&"]/g,"")}</option>`).join("");
+    renderTimes();
+  }catch(e){$("times").innerHTML="";$("pnote").textContent="مواقيت هذا الشهر غير متوفرة بعد؛ ستظهر حين تنشرها الوزارة ويتصل الهاتف بالإنترنت."}
+}
+$("city").addEventListener("change",e=>{city=+e.target.value;try{localStorage.setItem(PK,String(city))}catch(x){}renderTimes()});
+prayers();setInterval(renderTimes,60000);
+
+build();view=toH(TODAY).k;
+{const t=toH(TODAY);$("gIn").value=j2iso(TODAY);$("hD").value=t.d;$("hM").value=t.m;$("hY").value=t.y}
+all();dayInfo(TODAY);
 const k0=lastOff;$("st").textContent=`آخر بلاغ محفوظ: فاتح ${HM[k0%12]} ${Math.floor(k0/12)}هـ`;
 update(false);
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});

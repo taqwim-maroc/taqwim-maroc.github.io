@@ -14,6 +14,22 @@ EVENTS = {(1, 1): "رأس السنة الهجرية", (1, 10): "عاشوراء",
 DOMAIN = "taqwim-maroc.github.io"
 
 
+def fast_on(m, d):
+    if m == 1 and d == 9:
+        return "صيام تاسوعاء"
+    if m == 1 and d == 10:
+        return "صيام عاشوراء"
+    if m == 12 and d <= 8:
+        return "صيام العشر من ذي الحجة"
+    if m == 12 and d == 9:
+        return "صيام يوم عرفة"
+    if m == 10 and 2 <= d <= 7:
+        return "صيام ست من شوال"
+    if m != 9 and 13 <= d <= 15 and not (m == 12 and d == 13):
+        return "صيام الأيام البيض"
+    return ""
+
+
 def esc(s):
     return s.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;")
 
@@ -51,11 +67,24 @@ def main():
             end = (day + dt.timedelta(days=1)).strftime("%Y%m%d")
             title = f"{d} {HM[m - 1]} {y}هـ"
             ev = EVENTS.get((m, d))
+            fs = fast_on(m, d)
             items = [("d", title)] + ([("e", f"{ev} · {title}")] if ev else [])
+            if fs and fs != "صيام عاشوراء":
+                items.append(("f", f"{fs} (مستحب)"))
             for kind, summary in items:
                 lines += ["BEGIN:VEVENT", f"UID:{kind}-{ds}@{DOMAIN}", f"DTSTAMP:{stamp}",
                           f"DTSTART;VALUE=DATE:{ds}", f"DTEND;VALUE=DATE:{end}",
                           "SUMMARY:" + esc(summary), "TRANSP:TRANSPARENT", "END:VEVENT"]
+            if d == 29:
+                # مساء اليوم 29 تراقب الوزارة هلال الشهر الموالي (حدث بتوقيت ليتلقى إشعارا)
+                nm = HM[m % 12]
+                t0 = day.strftime("%Y%m%d") + "T190000Z"
+                t1 = day.strftime("%Y%m%d") + "T200000Z"
+                lines += ["BEGIN:VEVENT", f"UID:h-{ds}@{DOMAIN}", f"DTSTAMP:{stamp}",
+                          f"DTSTART:{t0}", f"DTEND:{t1}",
+                          "SUMMARY:" + esc(f"مراقبة هلال {nm} الليلة"),
+                          "DESCRIPTION:" + esc("يصدر بلاغ وزارة الأوقاف بعد المغرب: إما غدا فاتح الشهر، وإما يُتمّ الشهر 30 يوما. افتح التطبيق واضغط «تحديث»: https://taqwim-maroc.github.io"),
+                          "TRANSP:TRANSPARENT", "END:VEVENT"]
     lines.append("END:VCALENDAR")
     body = "\r\n".join(fold(l) for l in lines) + "\r\n"
     # لا نغيّر الملف إن لم يتغير إلا الطابع الزمني، تفاديا لإيداع لا داعي له

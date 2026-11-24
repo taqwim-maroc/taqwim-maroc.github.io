@@ -1,5 +1,5 @@
 // يحفظ التطبيق في الهاتف ليعمل دون إنترنت
-const V="hijri-v2";
+const V="hijri-v3";
 const SHELL=["./","index.html","manifest.webmanifest","icon.svg","icon-192.png","icon-512.png","data.json"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
@@ -8,6 +8,9 @@ self.addEventListener("fetch",e=>{
   // البيانات: من الشبكة أولا، ثم المحفوظ
   if(u.origin===location.origin&&u.pathname.endsWith("/data.json")){
     e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(V).then(x=>x.put("data.json",c));return r}).catch(()=>caches.match("data.json")));return}
+  // ملفات المواقيت الشهرية لا تتغير: المحفوظ أولا
+  if(u.origin===location.origin&&u.pathname.includes("/prayers/horaires-")){
+    e.respondWith(caches.open(V).then(c=>c.match(e.request,{ignoreSearch:true}).then(hit=>hit||fetch(e.request).then(r=>{if(r.ok)c.put(e.request,r.clone());return r}))));return}
   // الخطوط: المحفوظ ثم تحديث في الخلفية
   if(u.host==="fonts.googleapis.com"||u.host==="fonts.gstatic.com"){
     e.respondWith(caches.open(V).then(c=>c.match(e.request).then(hit=>{const net=fetch(e.request).then(r=>{c.put(e.request,r.clone());return r}).catch(()=>hit);return hit||net})));return}
