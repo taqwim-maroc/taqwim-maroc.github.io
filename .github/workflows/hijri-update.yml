@@ -25,6 +25,8 @@ jobs:
         run: python tools/update.py
       - name: جلب مواقيت الصلاة
         run: python tools/fetch_prayers.py
+      - name: تقاويم تنبيهات الصلاة
+        run: python tools/make_prayer_ics.py
       - name: توليد ملف تقويم Google
         run: python tools/make_ics.py
       - name: حفظ البلاغ الجديد

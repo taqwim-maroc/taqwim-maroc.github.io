@@ -56,6 +56,10 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
 .pray{background:light-dark(#fff,#1f1013);border-bottom:1px solid var(--line)}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.ph h2{margin:0}
 select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
+.cd{margin-top:12px;font-size:17px;font-weight:600;color:var(--red)}
+.notif{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
+.notif summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
+.notif ol{padding-inline-start:20px;margin:8px 0}.notif li{margin:8px 0}.notif code{font-size:13px;overflow-wrap:anywhere;user-select:all;direction:ltr;display:inline-block}
 .cityp{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 320px;justify-content:flex-end}.cityp input{flex:1 1 160px}.cityp select{flex:1 1 140px}
 .hits{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}.hits button{font:inherit;font-size:15px;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--teal);background:transparent;color:var(--teal);cursor:pointer}
 .hits .none{font-size:14px;color:var(--mute)}
@@ -97,7 +101,15 @@ select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;bord
   <div class="ph"><h2>مواقيت الصلاة</h2><div class="cityp"><input type="search" id="cq" placeholder="ابحث عن مدينتك…" aria-label="البحث عن مدينة" autocomplete="off"><select id="city" aria-label="المدينة"></select></div></div>
   <div class="hits" id="hits" hidden></div>
   <div class="times" id="times"></div>
+  <div class="cd" id="cd" hidden></div>
   <p class="sub" id="pnote" style="text-align:start;margin:10px 0 0">مواقيت وزارة الأوقاف والشؤون الإسلامية</p>
+  <details class="notif"><summary>تنبيهات الصلاة على الهاتف</summary>
+    <p>اشترك في تقويم مواقيت مدينتك في تقويم Google، فيرنّ هاتفك عند كل صلاة حتى والتطبيق مغلق:</p>
+    <ol>
+      <li><a id="pcal" class="gcal" href="#" target="_blank" rel="noopener">إضافة مواقيت <span id="pcn">مدينتك</span> إلى تقويم Google</a><br><span class="sub">يُفضَّل فتحه في وضع «موقع مصمم للكمبيوتر». إن لم ينجح، أضف في تقويم Google ← «من عنوان URL» هذا العنوان:</span><br><code id="purl"></code></li>
+      <li>في تطبيق تقويم Google ← الإعدادات ← «مواقيت الصلاة» ← فعّل المزامنة، واجعل الإشعار الافتراضي <strong>«عند وقت الحدث»</strong> أو قبله بدقائق.</li>
+    </ol>
+  </details>
 </div></section>
 
 <section class="band"><div class="wrap">
@@ -285,7 +297,14 @@ function renderTimes(){
   const mins=dt.getHours()*60+dt.getMinutes(),toM=t=>{const[a,b]=t.split(":");return a*60+ +b};
   let nx=row.findIndex((t,i)=>i!==1&&toM(t)>mins);
   box.innerHTML=row.map((t,i)=>`<div class="pt${i===nx?" nx":""}${i===1?" sun":""}"><span>${PN[i]}</span><b>${t.replace(/[^0-9:]/g,"")}</b></div>`).join("");
-  $("pnote").textContent=`${v.n} · مواقيت وزارة الأوقاف والشؤون الإسلامية`+(nx<0?" · انتهت صلوات اليوم":"");
+  $("pnote").textContent=`${v.n} · مواقيت وزارة الأوقاف والشؤون الإسلامية`;
+  const cd=$("cd");
+  if(nx>=0){const left=toM(row[nx])-mins,hh=Math.floor(left/60),mm=left%60;cd.hidden=false;
+    cd.textContent=`${PN[nx]} بعد ${hh?hh+" س ":""}${mm} د`}
+  else{const nr=v.h[dt.getDate()];cd.hidden=!nr;if(nr)cd.textContent=`انتهت صلوات اليوم · الصبح غدا ${nr[0]}`}
+  const u=`https://taqwim-maroc.github.io/prayers/ics/${+v.c}.ics`;
+  $("pcal").href="https://calendar.google.com/calendar/render?cid="+encodeURIComponent(u.replace("https://","webcal://"));
+  $("purl").textContent=u;$("pcn").textContent=v.n;
 }
 async function prayers(){
   const dt=new Date(),key=`horaires-${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
