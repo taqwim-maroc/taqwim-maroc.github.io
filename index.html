@@ -59,6 +59,8 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
 .pray{background:light-dark(#fff,#1f1013);border-bottom:1px solid var(--line)}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.ph h2{margin:0}
 select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
+.lail{margin-top:6px;font-size:15px;color:#7d1020;font-weight:600}
+.cd .ago{color:var(--mute);font-weight:500;font-size:15px}
 .cd{margin-top:12px;font-size:17px;font-weight:600;color:var(--red)}
 .notif{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
 .notif summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
@@ -217,7 +219,7 @@ function moon(d){
 }
 function sheet(){
   const h=toH(TODAY);if(!h)return;
-  $("sheet").innerHTML=`<div class="wd">${wd(TODAY)}</div><div class="big">${h.d}</div><div class="hm">${HM[h.m-1]} ${h.y}هـ</div><span class="tag ${h.sure?"ok":"ap"}">${h.sure?"ثابت ببلاغ الوزارة":"تقديري، في انتظار البلاغ"}</span>`;
+  $("sheet").innerHTML=`<div class="wd">${wd(TODAY)}</div><div class="big">${h.d}</div><div class="hm">${HM[h.m-1]} ${h.y}هـ</div><div class="lail" id="lail" hidden></div><span class="tag ${h.sure?"ok":"ap"}">${h.sure?"ثابت ببلاغ الوزارة":"تقديري، في انتظار البلاغ"}</span>`;
   const f=fastOn(h);if(f)$("sheet").insertAdjacentHTML("beforeend",`<div class="fast">يُستحب اليوم: ${f}</div>`);
   moon(h.d);
 }
@@ -252,7 +254,7 @@ function ask(){
   else if(cur.o&&!nx.o&&t.d===29){box.hidden=false;box.innerHTML=`<strong>الليلة مراقبة هلال ${nm}.</strong> يصدر بلاغ الوزارة بعد المغرب، فاضغط «تحديث» هذا المساء (بعد الثامنة تقريبا) أو صباح الغد.`;$("upd").classList.remove("pulse")}
   else $("upd").classList.remove("pulse");
 }
-function all(){build();sheet();grid();lists();ask();conv()}
+function all(){build();sheet();grid();lists();ask();conv();try{renderTimes()}catch(e){}}
 
 $("prev").onclick=()=>{view=Math.max(view-1,idx(Y0,1));grid()};
 $("next").onclick=()=>{view=Math.min(view+1,idx(Y1,11));grid()};
@@ -298,18 +300,38 @@ for(const id of["gIn","hD","hM","hY"])$(id).addEventListener("input",conv);
 const PN=["الصبح","الشروق","الظهر","العصر","المغرب","العشاء"],PK="hijri-ma-city";
 let PM=null,city=1;try{city=+localStorage.getItem(PK)||1}catch(e){}
 function loadScript(src){return new Promise((ok,no)=>{const el=document.createElement("script");el.src=src;el.onload=ok;el.onerror=no;document.head.appendChild(el)})}
+// صف مواقيت يوم معيّن (قد يكون في الشهر الموالي)
+function rowAt(off){
+  const d=new Date(Date.now()+MA_OFF*60000+off*864e5),y=d.getUTCFullYear(),m=d.getUTCMonth()+1;
+  const mo=(window.HORAIRES_MOIS||[]).find(x=>x.annee===y&&x.mois===m);if(!mo)return null;
+  const v=mo.villes.find(x=>x.c===city);return v?v.h[d.getUTCDate()-1]||null:null;
+}
+const dur=n=>{const h=Math.floor(n/60),m=n%60;return(h?h+" س ":"")+m+" د"};
 function renderTimes(){
   const box=$("times");if(!PM){return}
   const v=PM.villes.find(x=>x.c===city)||PM.villes[0];city=v.c;$("city").value=String(v.c);
-  const dt=MAD(),row=v.h[dt.getDate()-1];if(!row){box.innerHTML="";return}
-  const mins=dt.getHours()*60+dt.getMinutes(),toM=t=>{const[a,b]=t.split(":");return a*60+ +b};
-  let nx=row.findIndex((t,i)=>i!==1&&toM(t)>mins);
-  box.innerHTML=row.map((t,i)=>`<div class="pt${i===nx?" nx":""}${i===1?" sun":""}"><span>${PN[i]}</span><b>${t.replace(/[^0-9:]/g,"")}</b></div>`).join("");
-  $("pnote").textContent=`${v.n} · مواقيت وزارة الأوقاف والشؤون الإسلامية`;
-  const cd=$("cd");
-  if(nx>=0){const left=toM(row[nx])-mins,hh=Math.floor(left/60),mm=left%60;cd.hidden=false;
-    cd.textContent=`${PN[nx]} بعد ${hh?hh+" س ":""}${mm} د`}
-  else{const nr=v.h[dt.getDate()];cd.hidden=!nr;if(nr)cd.textContent=`انتهت صلوات اليوم · الصبح غدا ${nr[0]}`}
+  const row=rowAt(0);if(!row){box.innerHTML="";return}
+  const dt=MAD(),mins=dt.getHours()*60+dt.getMinutes(),toM=t=>{const[a,b]=t.replace(/[^0-9:]/g,"").split(":");return a*60+ +b};
+  // الصلوات سلسلة واحدة: بعد العشاء تأتي صبح الغد، وقبل الصبح تكون آخر صلاة عشاء الأمس
+  const P=[0,2,3,4,5];
+  let nx=P.find(i=>toM(row[i])>mins),next,prev;
+  if(nx!==undefined){next={i:nx,left:toM(row[nx])-mins}}
+  else{const r=rowAt(1);if(r)next={i:0,left:24*60-mins+toM(r[0]),tom:true}}
+  const pv=[...P].reverse().find(i=>toM(row[i])<=mins);
+  if(pv!==undefined)prev={i:pv,ago:mins-toM(row[pv])};
+  else{const r=rowAt(-1);if(r)prev={i:5,ago:mins+24*60-toM(r[5])}}
+  const hi=next&&!next.tom?next.i:(next&&next.tom?0:-1);
+  const shown=next&&next.tom?rowAt(1):row;
+  box.innerHTML=shown.map((t,i)=>`<div class="pt${i===hi?" nx":""}${i===1?" sun":""}"><span>${PN[i]}</span><b>${t.replace(/[^0-9:]/g,"")}</b></div>`).join("");
+  $("pnote").textContent=`${v.n} · ${next&&next.tom?"مواقيت الغد · ":""}مواقيت وزارة الأوقاف والشؤون الإسلامية`;
+  const cd=$("cd");cd.hidden=!next;
+  if(next)cd.innerHTML=`${PN[next.i]}${next.tom?" (غدا)":""} بعد ${dur(next.left)}`+(prev?`<span class="ago"> · مضى على ${PN[prev.i]} ${dur(prev.ago)}</span>`:"");
+  // اليوم الهجري يبدأ من المغرب
+  const lail=$("lail");
+  if(lail){const h=toH(TODAY),h2=toH(TODAY+1);
+    if(h&&h2&&mins>=toM(row[4])){lail.hidden=false;
+      lail.textContent=h2.sure?`بدأت ليلة ${h2.d} ${HM[h2.m-1]}`:(h.d===29?`ليلة 30 ${HM[h.m-1]} أو فاتح ${HM[h.m%12]}، حسب بلاغ الوزارة`:`بدأت ليلة ${h2.d} ${HM[h2.m-1]} (تقديري)`)}
+    else lail.hidden=true}
   const u=`https://taqwim-maroc.github.io/prayers/ics/${+v.c}.ics`;
   $("pcal").href="https://calendar.google.com/calendar/render?cid="+encodeURIComponent(u.replace("https://","webcal://"));
   $("purl").textContent=u;$("pcn").textContent=v.n;
@@ -320,6 +342,9 @@ async function prayers(){
     if(!(window.HORAIRES_MOIS||[]).some(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1))await loadScript(`prayers/${key}.js`);
     PM=(window.HORAIRES_MOIS||[]).find(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1);
     if(!PM)throw 0;
+    // الشهر الموالي والسابق لسلسلة الصلوات عند تغيّر الشهر (إن كانا متوفرين)
+    for(const o of[1,-1]){const d=new Date(Date.UTC(dt.getFullYear(),dt.getMonth()+o,1)),k=`horaires-${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
+      if(!(window.HORAIRES_MOIS||[]).some(x=>x.annee===d.getUTCFullYear()&&x.mois===d.getUTCMonth()+1))loadScript(`prayers/${k}.js`).then(renderTimes).catch(()=>{})}
     {const m=/GMT\s*([+-]\s*\d+)/.exec(PM.fuseau||"");MA_OFF=m?parseInt(m[1].replace(/\s/g,""),10)*60:0}
     $("city").innerHTML=PM.villes.map(v=>`<option value="${+v.c}">${String(v.n).replace(/[<>&"]/g,"")}</option>`).join("");
     renderTimes();
