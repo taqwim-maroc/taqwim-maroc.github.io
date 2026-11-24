@@ -72,16 +72,14 @@ def main():
     data = json.loads(DATA.read_text(encoding="utf-8"))
     months = {(r["y"], r["m"]): r for r in data["months"]}
     found = []
+    # المصدران كلاهما من موقع الوزارة الرسمي: ملف hijri.js ونص البلاغ في الصفحة الرئيسية
     for url in URLS:
         try:
             found += from_hijri_js(url)
+            break
         except Exception as e:
             print(f"تعذرت قراءة hijri.js من {url}: {e}")
-        if found:
-            break
     for url in URLS:
-        if found:
-            break
         try:
             text = clean(fetch(url))
         except Exception as e:  # الموقع في الصيانة أو يحجب الطلب
@@ -93,8 +91,14 @@ def main():
             except ValueError:
                 continue
             found.append((int(mt["hy"]), HIJRI[mt["hm"]], start, url))
+        break
 
     added = []
+    # إن اختلف المصدران في فاتح شهر واحد، لا نضيفه وننتظر
+    by_month = {}
+    for hy, hm, start, url in found:
+        by_month.setdefault((hy, hm), set()).add(start)
+    found = [f for f in found if len(by_month[(f[0], f[1])]) == 1]
     for hy, hm, start, url in sorted(set(found)):
         if (hy, hm) in months:
             continue
@@ -106,7 +110,7 @@ def main():
         if gap not in (29, 30):
             print(f"تجاهل {hy}-{hm} {start}: الفارق {gap} يوما")
             continue
-        months[(hy, hm)] = {"y": hy, "m": hm, "start": start.isoformat(), "source": url}
+        months[(hy, hm)] = {"y": hy, "m": hm, "start": start.isoformat(), "source": "https://www.habous.gov.ma/"}
         added.append(f"{hy}-{hm:02d} = {start}")
 
     if added:  # لا نكتب شيئا إن لم يجد جديدا، تفاديا لإيداع كل نصف ساعة

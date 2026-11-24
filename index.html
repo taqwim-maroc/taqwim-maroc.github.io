@@ -126,7 +126,7 @@ select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;bord
 
 <section class="band" style="background:light-dark(#f3ece2,#211114)"><div class="wrap two">
   <div><h2>المناسبات القادمة</h2><table><tbody id="ev"></tbody></table></div>
-  <div><h2>الشهور الثابتة ببلاغ</h2><div style="max-height:330px;overflow:auto"><table><tbody id="offT"></tbody></table></div></div>
+  <div><h2>الشهور الثابتة ببلاغ</h2><p class="sub" style="text-align:start;margin:-6px 0 10px">المصدر: <a href="https://www.habous.gov.ma/" target="_blank" rel="noopener">موقع وزارة الأوقاف والشؤون الإسلامية</a></p><div style="max-height:330px;overflow:auto"><table><tbody id="offT"></tbody></table></div></div>
 </div></section>
 
 <footer class="band"><div class="wrap note">
@@ -223,8 +223,7 @@ function lists(){
   out.sort((a,b)=>a[0]-b[0]);
   $("ev").innerHTML=out.slice(0,7).map(([j,n,h])=>`<tr><td><strong>${n}</strong><br><span style="font-size:14px">${wd(j)} ${htxt(h)}${h.sure?"":" (تقديري)"}</span></td><td class="n">${j===TODAY?"اليوم":"بعد "+(j-TODAY)+" يوما"}</td></tr>`).join("");
   const off=Object.keys(starts).map(Number).filter(k=>starts[k].o).sort((a,b)=>b-a);
-  const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  $("offT").innerHTML=off.map(k=>{let u=SRC[k];if(u&&/habous\.gov\.ma\/data\//.test(u))u="https://www.habous.gov.ma/";const lab=u&&/habous\.gov\.ma/.test(u)?"موقع الوزارة":"البلاغ",a=u&&/^https:\/\//.test(u)?` · <a href="${esc(u)}" target="_blank" rel="noopener">${lab}</a>`:"";return`<tr><td>فاتح ${HM[k%12]} ${Math.floor(k/12)}هـ</td><td class="n">يوم ${wd(starts[k].j)}${a}</td></tr>`}).join("");
+  $("offT").innerHTML=off.map(k=>`<tr><td>فاتح ${HM[k%12]} ${Math.floor(k/12)}هـ</td><td class="n">يوم ${wd(starts[k].j)}</td></tr>`).join("");
 }
 function ask(){
   const box=$("ask"),t=toH(TODAY);box.hidden=true;if(!t)return;
