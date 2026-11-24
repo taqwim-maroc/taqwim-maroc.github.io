@@ -61,6 +61,7 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
 select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
 .lail{margin-top:6px;font-size:15px;color:#7d1020;font-weight:600}
 .cd .ago{color:var(--mute);font-weight:500;font-size:15px}
+.users{font-size:14px;color:#f1dcd8;margin-top:4px}.users b{color:#fff;font-size:16px}
 .cd{margin-top:12px;font-size:17px;font-weight:600;color:var(--red)}
 .notif{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
 .notif summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
@@ -98,6 +99,7 @@ select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;bord
       <button id="upd">تحديث من بلاغات الوزارة</button>
       <div class="st" id="st">جارٍ قراءة آخر البلاغات…</div>
       <div class="ask" id="ask" hidden></div>
+      <div class="users" id="users" hidden></div>
     </div>
   </div>
 </div></header>
@@ -363,6 +365,29 @@ $("cq").addEventListener("input",()=>{
 });
 $("hits").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;setCity(b.dataset.c);$("cq").value="";$("hits").hidden=true;$("hits").innerHTML=""});
 prayers();setInterval(renderTimes,60000);
+
+// عدّاد المستعملين: كل جهاز يُحتسب مرة واحدة عند أول فتح، ومرة عند أول فتح بعد التثبيت
+const GC="https://taqwim-maroc.goatcounter.com";
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const standalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){return false}};
+function track(n){
+  const gc=window.goatcounter;
+  if(!gc||!gc.count){if(n<20)setTimeout(()=>track(n+1),1000);return}
+  if(!lsGet("hm-u1")){gc.count({path:"first-open",title:"أول فتح",event:true});lsSet("hm-u1","1")}
+  if(standalone()&&!lsGet("hm-u2")){gc.count({path:"installed",title:"تثبيت",event:true});lsSet("hm-u2","1")}
+}
+const fmtN=x=>String(x||"0").replace(/[^0-9]/g,"")||"0";
+function showUsers(u,i){
+  const el=$("users");if(u==null)return;
+  el.hidden=false;el.innerHTML=`عدد المستعملين: <b>${(+u).toLocaleString("ar-MA")}</b>${+i?` · ثبّتوه: <b>${(+i).toLocaleString("ar-MA")}</b>`:""}`;
+}
+async function counter(){
+  const c=lsGet("hm-cnt");if(c){try{const o=JSON.parse(c);showUsers(o.u,o.i)}catch(e){}}
+  const get=async p=>{try{const r=await fetch(`${GC}/counter/${p}.json`,{cache:"no-store"});if(!r.ok)return 0;const j=await r.json();return fmtN(j.count)}catch(e){return null}};
+  const[u,i]=await Promise.all([get("first-open"),get("installed")]);
+  if(u===null)return;lsSet("hm-cnt",JSON.stringify({u,i}));showUsers(u,i);
+}
+setTimeout(()=>{track(0);setTimeout(counter,4000)},1500);
 
 build();view=toH(TODAY).k;
 {const t=toH(TODAY);$("gIn").value=j2iso(TODAY);$("hD").value=t.d;$("hM").value=t.m;$("hY").value=t.y}
