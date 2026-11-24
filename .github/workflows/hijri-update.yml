@@ -23,16 +23,18 @@ jobs:
           python-version: "3.12"
       - name: قراءة بلاغات وزارة الأوقاف
         run: python tools/update.py
+      - name: جلب مواقيت الصلاة
+        run: python tools/fetch_prayers.py
       - name: توليد ملف تقويم Google
         run: python tools/make_ics.py
       - name: حفظ البلاغ الجديد
         run: |
-          if git diff --quiet -- data.json calendar.ics; then
+          if git add -N prayers; git diff --quiet -- data.json calendar.ics prayers; then
             echo "لا تغيير"
             exit 0
           fi
           git config user.name "hijri-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json calendar.ics
+          git add data.json calendar.ics prayers
           git commit -m "تحديث فواتح الشهور الهجرية من بلاغات الوزارة"
           git push
