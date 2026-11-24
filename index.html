@@ -199,7 +199,10 @@ function toH(j){
   const s=starts[lo],n=starts[lo+1],d=j-s.j+1;
   return{y:Math.floor(lo/12),m:lo%12+1,d,k:lo,sure:!!(s.o&&(d<30||(n&&n.o)))};
 }
-const now=new Date();const TODAY=g2j(now.getFullYear(),now.getMonth()+1,now.getDate());
+// توقيت المغرب الرسمي محسوبا من UTC، لا من ساعة الهاتف (بعض الهواتف ما زالت على GMT+1 أو منطقة زمنية خاطئة)
+let MA_OFF=0;
+function MAD(){const d=new Date(Date.now()+MA_OFF*60000);return{getFullYear:()=>d.getUTCFullYear(),getMonth:()=>d.getUTCMonth(),getDate:()=>d.getUTCDate(),getHours:()=>d.getUTCHours(),getMinutes:()=>d.getUTCMinutes()}}
+const now=MAD();const TODAY=g2j(now.getFullYear(),now.getMonth()+1,now.getDate());
 let view;
 const wd=j=>WD[(j+1)%7];
 const htxt=h=>`${h.d} ${HM[h.m-1]} ${h.y}هـ`;
@@ -293,7 +296,7 @@ function loadScript(src){return new Promise((ok,no)=>{const el=document.createEl
 function renderTimes(){
   const box=$("times");if(!PM){return}
   const v=PM.villes.find(x=>x.c===city)||PM.villes[0];city=v.c;$("city").value=String(v.c);
-  const dt=new Date(),row=v.h[dt.getDate()-1];if(!row){box.innerHTML="";return}
+  const dt=MAD(),row=v.h[dt.getDate()-1];if(!row){box.innerHTML="";return}
   const mins=dt.getHours()*60+dt.getMinutes(),toM=t=>{const[a,b]=t.split(":");return a*60+ +b};
   let nx=row.findIndex((t,i)=>i!==1&&toM(t)>mins);
   box.innerHTML=row.map((t,i)=>`<div class="pt${i===nx?" nx":""}${i===1?" sun":""}"><span>${PN[i]}</span><b>${t.replace(/[^0-9:]/g,"")}</b></div>`).join("");
@@ -307,11 +310,12 @@ function renderTimes(){
   $("purl").textContent=u;$("pcn").textContent=v.n;
 }
 async function prayers(){
-  const dt=new Date(),key=`horaires-${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
+  const dt=MAD(),key=`horaires-${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
   try{
     if(!(window.HORAIRES_MOIS||[]).some(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1))await loadScript(`prayers/${key}.js`);
     PM=(window.HORAIRES_MOIS||[]).find(x=>x.annee===dt.getFullYear()&&x.mois===dt.getMonth()+1);
     if(!PM)throw 0;
+    {const m=/GMT\s*([+-]\s*\d+)/.exec(PM.fuseau||"");MA_OFF=m?parseInt(m[1].replace(/\s/g,""),10)*60:0}
     $("city").innerHTML=PM.villes.map(v=>`<option value="${+v.c}">${String(v.n).replace(/[<>&"]/g,"")}</option>`).join("");
     renderTimes();
   }catch(e){$("times").innerHTML="";$("pnote").textContent="مواقيت هذا الشهر غير متوفرة بعد؛ ستظهر حين تنشرها الوزارة ويتصل الهاتف بالإنترنت."}
