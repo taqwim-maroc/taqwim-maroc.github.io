@@ -56,6 +56,9 @@ table{width:100%;border-collapse:collapse}td{padding:9px 6px;border-bottom:1px s
 .pray{background:light-dark(#fff,#1f1013);border-bottom:1px solid var(--line)}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.ph h2{margin:0}
 select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
+.cityp{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 320px;justify-content:flex-end}.cityp input{flex:1 1 160px}.cityp select{flex:1 1 140px}
+.hits{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}.hits button{font:inherit;font-size:15px;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--teal);background:transparent;color:var(--teal);cursor:pointer}
+.hits .none{font-size:14px;color:var(--mute)}
 .times{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 .pt{border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;background:var(--bg)}
 .pt span{display:block;font-size:14px;color:var(--mute)}.pt b{font:700 26px/1.2 Amiri,serif;font-variant-numeric:tabular-nums}
@@ -91,7 +94,8 @@ select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;bord
 </div></header>
 
 <section class="band pray" id="praySec"><div class="wrap">
-  <div class="ph"><h2>مواقيت الصلاة</h2><select id="city" aria-label="المدينة"></select></div>
+  <div class="ph"><h2>مواقيت الصلاة</h2><div class="cityp"><input type="search" id="cq" placeholder="ابحث عن مدينتك…" aria-label="البحث عن مدينة" autocomplete="off"><select id="city" aria-label="المدينة"></select></div></div>
+  <div class="hits" id="hits" hidden></div>
   <div class="times" id="times"></div>
   <p class="sub" id="pnote" style="text-align:start;margin:10px 0 0">مواقيت وزارة الأوقاف والشؤون الإسلامية</p>
 </div></section>
@@ -294,7 +298,18 @@ async function prayers(){
     renderTimes();
   }catch(e){$("times").innerHTML="";$("pnote").textContent="مواقيت هذا الشهر غير متوفرة بعد؛ ستظهر حين تنشرها الوزارة ويتصل الهاتف بالإنترنت."}
 }
-$("city").addEventListener("change",e=>{city=+e.target.value;try{localStorage.setItem(PK,String(city))}catch(x){}renderTimes()});
+function setCity(c){city=+c;try{localStorage.setItem(PK,String(city))}catch(x){}renderTimes()}
+$("city").addEventListener("change",e=>setCity(e.target.value));
+// البحث عن مدينة: يتجاهل الهمزات والتاء المربوطة والألف المقصورة و«ال»
+const norm=t=>String(t).replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/(^|\s)ال/g,"$1").replace(/\s+/g," ").trim();
+$("cq").addEventListener("input",()=>{
+  const q=norm($("cq").value),box=$("hits");
+  if(!PM||!q){box.hidden=true;box.innerHTML="";return}
+  const m=PM.villes.filter(v=>norm(v.n).includes(q)).sort((a,b)=>norm(a.n).indexOf(q)-norm(b.n).indexOf(q)).slice(0,8);
+  box.hidden=false;
+  box.innerHTML=m.length?m.map(v=>`<button type="button" data-c="${+v.c}">${String(v.n).replace(/[<>&"]/g,"")}</button>`).join(""):`<span class="none">لا توجد مدينة بهذا الاسم</span>`;
+});
+$("hits").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;setCity(b.dataset.c);$("cq").value="";$("hits").hidden=true;$("hits").innerHTML=""});
 prayers();setInterval(renderTimes,60000);
 
 build();view=toH(TODAY).k;
