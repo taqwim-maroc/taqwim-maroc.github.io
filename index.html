@@ -142,7 +142,7 @@ select,input{font:inherit;font-size:16px;min-height:44px;border-radius:10px;bord
 </div></section>
 
 <footer class="band"><div class="wrap note">
-  الشهر يثبت رسميا ببلاغ وزارة الأوقاف والشؤون الإسلامية عن رؤية الهلال، ويُتفقَّد موقع الوزارة آليا كل مساء. التطبيق يعمل دون إنترنت، ولا يحتاج إلى «تحديث» إلا من اليوم 28 إلى صدور بلاغ الشهر الجديد. الأيام المنقطة تقديرية إلى أن يصدر البلاغ. المصدر: <a href="https://www.habous.gov.ma/">habous.gov.ma</a><br><br><a class="gcal" href="https://calendar.google.com/calendar/render?cid=webcal://taqwim-maroc.github.io/calendar.ics">إضافة التاريخ الهجري إلى تقويم Google</a> <a class="gcal" href="https://forms.gle/HP9mebxaYrPY4d6X6" target="_blank" rel="noopener">أرسل ملاحظة أو اقتراحا</a>
+  الشهر يثبت رسميا ببلاغ وزارة الأوقاف والشؤون الإسلامية عن رؤية الهلال، ويُتفقَّد موقع الوزارة آليا كل مساء. التطبيق يعمل دون إنترنت، ولا يحتاج إلى «تحديث» إلا مرة واحدة، مساء اليوم 29 من الشهر الهجري بعد صدور بلاغ الوزارة. الأيام المنقطة تقديرية إلى أن يصدر البلاغ. المصدر: <a href="https://www.habous.gov.ma/">habous.gov.ma</a><br><br><a class="gcal" href="https://calendar.google.com/calendar/render?cid=webcal://taqwim-maroc.github.io/calendar.ics">إضافة التاريخ الهجري إلى تقويم Google</a> <a class="gcal" href="https://forms.gle/HP9mebxaYrPY4d6X6" target="_blank" rel="noopener">أرسل ملاحظة أو اقتراحا</a>
 </div></footer>
 
 <script>
@@ -244,7 +244,9 @@ function ask(){
   const box=$("ask"),t=toH(TODAY);box.hidden=true;if(!t)return;
   const k=t.k+1,nm=HM[k%12],cur=starts[t.k],nx=starts[k];
   if(nx.o&&nx.j>TODAY){box.hidden=false;box.innerHTML=nx.j===TODAY+1?`<strong>غدا فاتح ${nm}</strong> حسب بلاغ الوزارة.`:`<strong>ثبت بالبلاغ:</strong> فاتح ${nm} يوم ${wd(nx.j)}.`;return}
-  if(cur.o&&!nx.o&&t.d>=28){box.hidden=false;box.innerHTML=`<strong>اقترب آخر ${HM[t.m-1]}.</strong> الشهر الهجري 29 أو 30 يوما حسب رؤية الهلال، فاضغط «تحديث» كل يوم حتى يصدر بلاغ الوزارة بفاتح ${nm}.`;$("upd").classList.add("pulse")}
+  const hr=MAD().getHours();
+  if(cur.o&&!nx.o&&(t.d===30||(t.d===29&&hr>=19))){box.hidden=false;box.innerHTML=t.d===30?`<strong>اضغط «تحديث» الآن</strong> ليصلك بلاغ الوزارة بفاتح ${nm}.`:`<strong>اضغط «تحديث» الآن.</strong> راقبت الوزارة هلال ${nm} مساء اليوم 29، وبلاغها يحدد هل غدا فاتح ${nm} أم يُتمّ ${HM[t.m-1]} 30 يوما.`;$("upd").classList.add("pulse")}
+  else if(cur.o&&!nx.o&&t.d===29){box.hidden=false;box.innerHTML=`<strong>الليلة مراقبة هلال ${nm}.</strong> يصدر بلاغ الوزارة بعد المغرب، فاضغط «تحديث» هذا المساء (بعد الثامنة تقريبا) أو صباح الغد.`;$("upd").classList.remove("pulse")}
   else $("upd").classList.remove("pulse");
 }
 function all(){build();sheet();grid();lists();ask();conv()}
