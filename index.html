@@ -252,7 +252,7 @@ function all(){build();sheet();grid();lists();ask();conv()}
 $("prev").onclick=()=>{view=Math.max(view-1,idx(Y0,1));grid()};
 $("next").onclick=()=>{view=Math.min(view+1,idx(Y1,11));grid()};
 
-const fmt=iso=>{try{return new Intl.DateTimeFormat("ar-MA",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Casablanca"}).format(new Date(iso))}catch(e){return""}};
+const fmt=iso=>{try{const d=new Date(new Date(iso).getTime()+MA_OFF*60000);return`${d.getUTCDate()} ${GM[d.getUTCMonth()]} ${d.getUTCFullYear()}، ${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`}catch(e){return""}};
 async function update(manual){
   const b=$("upd"),st=$("st");b.disabled=true;b.textContent="جارٍ التحديث…";
   const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
