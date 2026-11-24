@@ -63,7 +63,7 @@ def from_hijri_js(base):
     url = base + "data/hijri.js"
     out = []
     for d, m, y in JS_ENTRY.findall(fetch(url)):
-        out.append((int(y), int(m), dt.date.fromisoformat(d), url))
+        out.append((int(y), int(m), dt.date.fromisoformat(d), base))  # رابط الموقع لا ملف البرمجة
     print(f"{url}: {len(out)} شهرا")
     return out
 
